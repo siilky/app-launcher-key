@@ -42,4 +42,6 @@ jobs:
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create $env:GITHUB_REF_NAME $env:PACKAGE --title $env:GITHUB_REF_NAME --generate-notes
+        run: |
+          $notes = "Download ``$env:PACKAGE`` below and double-click it: Logi Plugin Service installs the plugin. Requires Logi Options+ with Logi Plugin Service 6.4 or later. See the [README](https://github.com/$env:GITHUB_REPOSITORY#readme) for usage and known limitations."
+          gh release create $env:GITHUB_REF_NAME $env:PACKAGE --title $env:GITHUB_REF_NAME --notes $notes --generate-notes
