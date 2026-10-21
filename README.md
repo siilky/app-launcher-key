@@ -20,6 +20,7 @@ the application, and the key lights up like a lamp while the application is runn
 
 - Windows with [Logi Options+](https://www.logitech.com/software/logi-options-plus.html), which installs Logi Plugin
   Service.
+- Logi Plugin Service 6.4 or later.
 - MX Creative Keypad or MX Keypad. Tested on the MX Creative Keypad with Logi Plugin Service 6.4.2.
 
 ## Installation
@@ -58,11 +59,12 @@ remove them.
 
 ## Building from source
 
-Requires Logi Options+ (the build references `PluginApi.dll` from the Logi Plugin Service installation), the
-[.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) and Logi Plugin Tool:
+The plugin API comes from the [LogiPluginApi](https://www.nuget.org/packages/LogiPluginApi) NuGet package; running the
+plugin needs Logi Options+. Building requires the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) and
+Logi Plugin Tool:
 
 ```powershell
-dotnet tool install --global LogiPluginTool
+dotnet tool install --global LogiPluginTool --version 6.1.4.22672
 ```
 
 Development build: it registers the build output with Logi Plugin Service through a `.link` file and reloads the plugin.
@@ -75,13 +77,17 @@ Package:
 
 ```powershell
 dotnet build -c Release AppLauncherKeyPlugin/src/AppLauncherKeyPlugin.csproj
-logiplugintool pack AppLauncherKeyPlugin/bin/Release/ AppLauncherKey_1.0.lplug4
-logiplugintool verify AppLauncherKey_1.0.lplug4
+logiplugintool pack AppLauncherKeyPlugin/bin/Release/ AppLauncherKey.lplug4
+logiplugintool verify AppLauncherKey.lplug4
 dotnet clean AppLauncherKeyPlugin/src/AppLauncherKeyPlugin.csproj
-logiplugintool install AppLauncherKey_1.0.lplug4
+logiplugintool install AppLauncherKey.lplug4
 ```
 
 `dotnet clean` removes the development `.link`, so only the installed copy of the plugin loads.
+
+Releases are built by GitHub Actions: pushing a tag `v<version>` that matches `version` in
+`AppLauncherKeyPlugin/src/package/metadata/LoupedeckPackage.yaml` builds, packs and verifies the plugin and publishes the
+package as a release.
 
 The lamp images in `AppLauncherKeyPlugin/src/Resources` and the store art are rendered by the Python scripts in
 `AppLauncherKeyPlugin/tools` (Pillow and numpy).
@@ -94,6 +100,7 @@ The lamp images in `AppLauncherKeyPlugin/src/Resources` and the store art are re
 | `AppLauncherKeyPlugin/src/AppSettings.cs` | Per-key settings. |
 | `AppLauncherKeyPlugin/src/package/metadata` | Package manifest, plugin icon and key layout template. |
 | `AppLauncherKeyPlugin/tools` | Image render scripts. |
+| `.github/workflows/release.yml` | Release build. |
 
 ## Support
 

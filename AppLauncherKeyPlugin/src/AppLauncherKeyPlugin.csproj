@@ -12,9 +12,6 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 
-    <PluginApiDir Condition="$(OS) == 'Windows_NT'">C:\Program Files\Logi\LogiPluginService\</PluginApiDir>
-    <PluginApiDir Condition="$(OS) != 'Windows_NT'">/Applications/Utilities/LogiPluginService.app/Contents/MonoBundle/</PluginApiDir>
-
     <PluginDir Condition="$(OS) == 'Windows_NT'">$(LocalAppData)\Logi\LogiPluginService\Plugins\</PluginDir>
     <PluginDir Condition="$(OS) != 'Windows_NT'">~/Library/Application\ Support/Logi/LogiPluginService/Plugins/</PluginDir>
 
@@ -30,11 +27,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="PluginApi">
-      <HintPath>$(PluginApiDir)PluginApi.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
+    <!-- Logi Plugin Service provides PluginApi and its dependencies at run time, so none of them is copied into the
+         package. -->
+    <PackageReference Include="LogiPluginApi" Version="6.4.2.3567" IncludeAssets="compile" />
   </ItemGroup>
+
+  <!-- LogiPluginApi 6.4.2.3567 depends on StyleCop.Analyzers with exclude="Build,Analyzers", but the SDK still resolves
+       its analyzers, with IncludeAssets="compile" and even with a direct reference using ExcludeAssets="all". This
+       repository does not use StyleCop. -->
+  <Target Name="RemoveStyleCopAnalyzers" AfterTargets="ResolvePackageAssets">
+    <ItemGroup>
+      <ResolvedAnalyzers Remove="@(ResolvedAnalyzers)" Condition="'%(ResolvedAnalyzers.NuGetPackageId)' == 'StyleCop.Analyzers'" />
+    </ItemGroup>
+  </Target>
 
   <Target Name="CopyPackage" AfterTargets="PostBuildEvent">
     <Message Text="📦 Copying package files..." Importance="High" />
@@ -45,7 +50,8 @@
     <Message Text="✅ Package files copied to $(OutputPath)..\" Importance="High" />
   </Target>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+  <!-- CI machines have no Logi Plugin Service to link the build to or reload. -->
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(CI)' != 'true'">
     <Exec Condition="$(OS) == 'Windows_NT'" Command="echo $(BaseOutputPath)$(Configuration)\ &gt; &quot;$(PluginDir)$(ProjectName).link&quot;" />
     <Exec Condition="$(OS) != 'Windows_NT'" Command="echo $(BaseOutputPath)$(Configuration)\ &gt; $(PluginDir)$(ProjectName).link" />
     <Message Text="🔨 Created plugin link at: $(PluginDir)$(ProjectName).link" Importance="High" />

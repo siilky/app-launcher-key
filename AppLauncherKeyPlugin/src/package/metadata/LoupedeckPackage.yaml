@@ -18,7 +18,7 @@ description: Launches an app from a key and highlights the key while the app is 
 pluginFileName: AppLauncherKeyPlugin.dll
 
 # Plugin version.
-version: 1.0
+version: 1.0.1
 
 # Author of the plugin. The author can be a company or an individual developer.
 author: Ruslan
@@ -56,7 +56,7 @@ pluginCapabilities:
     #- ActivatesApplication
 
 # Minimum Loupedeck version supported by the plugin.
-minimumLoupedeckVersion: 6.0
+minimumLoupedeckVersion: 6.4
 
 
 # ==================================================================================================

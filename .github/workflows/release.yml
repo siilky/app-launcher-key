@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install Logi Plugin Tool
+        run: dotnet tool install --global LogiPluginTool --version 6.1.4.22672
+
+      - name: Check that the tag matches the package version
+        run: |
+          $version = (Select-String -Path AppLauncherKeyPlugin/src/package/metadata/LoupedeckPackage.yaml -Pattern '^version:\s*(\S+)').Matches[0].Groups[1].Value
+          if ("v$version" -ne $env:GITHUB_REF_NAME) { throw "Tag $env:GITHUB_REF_NAME does not match package version $version" }
+          "PACKAGE=AppLauncherKey_$version.lplug4" >> $env:GITHUB_ENV
+
+      - name: Build
+        run: dotnet build -c Release AppLauncherKeyPlugin/src/AppLauncherKeyPlugin.csproj
+
+      # LogiPluginTool exits with 0 even when an operation fails, so success is read from its output.
+      - name: Pack and verify
+        run: |
+          $pack = logiplugintool pack AppLauncherKeyPlugin/bin/Release/ $env:PACKAGE
+          $pack
+          if (-not ($pack -match '^Operation succeeded')) { throw 'logiplugintool pack failed' }
+          $verify = logiplugintool verify $env:PACKAGE
+          $verify
+          if (-not ($verify -match '^Operation succeeded')) { throw 'logiplugintool verify failed' }
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create $env:GITHUB_REF_NAME $env:PACKAGE --title $env:GITHUB_REF_NAME --generate-notes
